@@ -1,4 +1,3 @@
-import { StepCondition } from './StepCondition';
 import { StepInput } from './StepInput';
 
 export class Step {
@@ -6,14 +5,12 @@ export class Step {
     position: number;
     title: string;
     subtitle: string;
-    conditions: StepCondition[];
     inputs: StepInput[];
 
     constructor() {
         this.position = 1;
         this.title = '';
         this.subtitle = '';
-        this.conditions = [];
         this.inputs = [];
     }
 
