@@ -6,8 +6,13 @@ import { Input } from '../../../entities/Input';
 import { objectToArray, extract } from '../../../utils/functions';
 import { InputCondition } from '../../../entities/InputCondition';
 import { Condition } from '../../../entities/Condition';
+import { APIURL } from '../../../utils/server';
+import { Briefing } from '../../../entities/Briefing';
 
 export default () => {
+    const [author, setAuthor] = useState('');
+    const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
     const [addedSteps, setAddedSteps] = useState([] as Step[]);
     const [inputs, setInputs] = useState([] as Input[]);
     const [conditions, setConditions] = useState([] as Condition[]);
@@ -59,7 +64,7 @@ export default () => {
     }
 
     function loadInputs() {
-        axios.get('http://localhost:8080/api/input')
+        axios.get(`${APIURL}/input`)
             .then(result => {
                 const { data } = result.data;
                 setInputs(
@@ -70,7 +75,7 @@ export default () => {
     }
 
     function loadConditions() {
-        axios.get('http://localhost:8080/api/condition')
+        axios.get(`${APIURL}/condition`)
             .then(result => {
                 const { data } = result.data;
                 setConditions(
@@ -107,6 +112,10 @@ export default () => {
         setAddedSteps(steps);
     }
 
+    function save() {
+
+    }
+
     useEffect(() => {
         loadInputs();
         loadConditions();
@@ -115,6 +124,37 @@ export default () => {
     return (
         <div>
             <h1>Nuevo formulario</h1>
+            <div className="main-info">
+                <div className="author">
+                    <label>
+                        Correo electrónico
+                        <input 
+                            type="email"
+                            value={author}
+                            onChange={e => { setAuthor(e.target.value); }}
+                        />
+                    </label>
+                </div>
+                <div className="title">
+                    <label>
+                        Título
+                        <input 
+                            type="text"
+                            value={title}
+                            onChange={e => { setTitle(e.target.value); }}
+                        />
+                    </label>
+                </div>
+                <div className="description">
+                    <label>
+                        Descripción
+                        <input type="text"
+                            value={title}
+                            onChange={e => { setTitle(e.target.value); }}
+                        />
+                    </label>
+                </div>
+            </div>
             {addedSteps.length > 0 && 
                 <div className="steps">
                     {addedSteps.map((step: Step, stepIndex: number) => {
@@ -280,6 +320,8 @@ export default () => {
                 </div>
             }
             <button onClick={addStep}>Agregar paso</button>
+            <hr />
+            <button onClick={save}>Guardar formulario</button>
         </div>
     );
 };
