@@ -8,7 +8,7 @@ export class InputCondition {
     constructor() {
         this.conditionId = '';
         this.stepInputId = '';
-        this.value = null;
+        this.value = '';
         this.goToStep = 0;
     }
 }

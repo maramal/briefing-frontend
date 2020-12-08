@@ -100,7 +100,7 @@ export default () => {
         const modifiedStep = addedSteps.find(step => step.position === stepPosition) as Step;
         const otherSteps = addedSteps.filter(step => step.position !== stepPosition) as Step[];
         const input = modifiedStep.inputs[inputIndex];
-        if (!input.conditions || input.conditions.length) return;
+        if (!input.conditions || !input.conditions.length) return;
         input.conditions[conditionIndex][field] = val;
         modifiedStep.inputs[inputIndex] = input;
         const steps = [ modifiedStep, ...otherSteps ].sort(compareStep);
@@ -202,7 +202,7 @@ export default () => {
                                                                                 <select 
                                                                                     disabled={loadingConditions} 
                                                                                     defaultValue={'default'} 
-                                                                                    onChange={ e => {
+                                                                                    onChange={e => {
                                                                                         changeCondition('type', step.position, inputIndex, conditionIndex, e.target.value)
                                                                                     }}
                                                                                 >
@@ -223,12 +223,12 @@ export default () => {
                                                                                 </select>
                                                                             </label>
                                                                         </div>
-                                                                        <div>
+                                                                        <div className="step-condition">
                                                                             <label>
                                                                                 Paso
                                                                                 <select 
                                                                                     defaultValue={'default'} 
-                                                                                    onChange={ e => {
+                                                                                    onChange={e => {
                                                                                         changeCondition('stepInputId', step.position, inputIndex, conditionIndex, e.target.value)
                                                                                     }}
                                                                                 >
@@ -246,6 +246,18 @@ export default () => {
                                                                                         );
                                                                                     })}
                                                                                 </select>
+                                                                            </label>
+                                                                        </div>
+                                                                        <div className="value-condition">
+                                                                            <label>
+                                                                                Valor
+                                                                                <input 
+                                                                                    type="text"
+                                                                                    value={condition.value}
+                                                                                    onChange={e => { 
+                                                                                        changeCondition('value', step.position, inputIndex, conditionIndex, e.target.value); 
+                                                                                    }}
+                                                                                />
                                                                             </label>
                                                                         </div>
                                                                     </div>
