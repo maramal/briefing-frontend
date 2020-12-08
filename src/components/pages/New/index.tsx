@@ -4,11 +4,15 @@ import { Step } from '../../../entities/Step';
 import { StepInput } from '../../../entities/StepInput';
 import { Input } from '../../../entities/Input';
 import { objectToArray, extract } from '../../../utils/functions';
+import { InputCondition } from '../../../entities/InputCondition';
+import { Condition } from '../../../entities/Condition';
 
 export default () => {
     const [addedSteps, setAddedSteps] = useState([] as Step[]);
     const [inputs, setInputs] = useState([] as Input[]);
+    const [conditions, setConditions] = useState([] as Condition[]);
     const [loadingInputs, setLoadingInputs] = useState(true);
+    const [loadingConditions, setLoadingConditions] = useState(true);
     const [error, setError] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
 
@@ -21,8 +25,8 @@ export default () => {
     }
     
     function addStepInput(stepPosition: number) {
-        const modifiedStep = addedSteps.find((step: Step) => step.position === stepPosition);
-        const otherSteps = addedSteps.filter((step: Step) => step.position !== stepPosition);
+        const modifiedStep = addedSteps.find((step: Step) => step.position === stepPosition) as Step;
+        const otherSteps = addedSteps.filter((step: Step) => step.position !== stepPosition) as Step[];
         const newInput = new StepInput();
         modifiedStep?.inputs.push(newInput);
         const steps = [ modifiedStep, ...otherSteps ].sort(compareStep);
@@ -32,6 +36,20 @@ export default () => {
             return;
         }
         setAddedSteps(steps as Step[]);
+    }
+
+    function addCondition(stepPosition: number, inputIndex: number) {
+        const modifiedStep = addedSteps.find((step: Step) => step.position === stepPosition) as Step;
+        const otherSteps = addedSteps.filter((step: Step) => step.position !== stepPosition) as Step[];
+        const stepInput = modifiedStep.inputs[inputIndex];
+        if (stepInput.conditions && stepInput.conditions.length) {
+            stepInput.conditions.push(new InputCondition());
+        } else {
+            stepInput.conditions = [ new InputCondition() ];
+        }
+        modifiedStep.inputs[inputIndex] = stepInput;    
+        const steps = [ modifiedStep, ...otherSteps ].sort(compareStep);
+        setAddedSteps(steps);
     }
 
     function compareStep(step1: any, step2: any): number {
@@ -51,6 +69,17 @@ export default () => {
             });
     }
 
+    function loadConditions() {
+        axios.get('http://localhost:8080/api/condition')
+            .then(result => {
+                const { data } = result.data;
+                setConditions(
+                    objectToArray<Condition>(data)
+                );
+                setLoadingConditions(false);
+            });
+    }
+
     function changeStepText(field: string, stepPosition: number, val: any): void {
         const modifiedStep = addedSteps.find(step => step.position === stepPosition) as Step;
         const otherSteps = addedSteps.filter(step => step.position !== stepPosition) as Step[];
@@ -67,8 +96,20 @@ export default () => {
         setAddedSteps(steps);
     }
 
+    function changeCondition(field: string, stepPosition: number, inputIndex: number, conditionIndex: number, val: any): void {
+        const modifiedStep = addedSteps.find(step => step.position === stepPosition) as Step;
+        const otherSteps = addedSteps.filter(step => step.position !== stepPosition) as Step[];
+        const input = modifiedStep.inputs[inputIndex];
+        if (!input.conditions || input.conditions.length) return;
+        input.conditions[conditionIndex][field] = val;
+        modifiedStep.inputs[inputIndex] = input;
+        const steps = [ modifiedStep, ...otherSteps ].sort(compareStep);
+        setAddedSteps(steps);
+    }
+
     useEffect(() => {
         loadInputs();
+        loadConditions();
     }, []);
     
     return (
@@ -128,7 +169,7 @@ export default () => {
                                                                 disabled={loadingInputs} 
                                                                 defaultValue={stepInput.inputId || 'default'} 
                                                                 onChange={ e => {
-                                                                    changeStepInputText('type', step.position, inputIndex, e.target.value)
+                                                                    changeStepInputText('conditionId', step.position, inputIndex, e.target.value)
                                                                 }}
                                                             >
                                                                 <option 
@@ -149,6 +190,72 @@ export default () => {
                                                             </select>
                                                         </label>
                                                     </div>
+                                                    {stepInput.conditions && stepInput.conditions.length > 0 &&
+                                                        <div className="input-conditions">
+                                                            {stepInput.conditions.map((condition: InputCondition, conditionIndex) => {
+
+                                                                return (
+                                                                    <div className="input-condition" key={conditionIndex}>
+                                                                        <div>
+                                                                            <label>
+                                                                                Condición
+                                                                                <select 
+                                                                                    disabled={loadingConditions} 
+                                                                                    defaultValue={'default'} 
+                                                                                    onChange={ e => {
+                                                                                        changeCondition('type', step.position, inputIndex, conditionIndex, e.target.value)
+                                                                                    }}
+                                                                                >
+                                                                                    <option 
+                                                                                        disabled 
+                                                                                        value="default" 
+                                                                                        key="-1"
+                                                                                    >{loadingConditions ? 'Cargando' : 'Selecciona una condición'}</option>
+                                                                                    {Object.keys(conditions).map((conditionId, conditionIndex) => {
+                                                                                        const condition: Condition = conditions[conditionId];
+                                                                                        return (
+                                                                                            <option 
+                                                                                                key={conditionIndex} 
+                                                                                                value={conditionId}
+                                                                                            >{condition.name}</option>
+                                                                                        );
+                                                                                    })}
+                                                                                </select>
+                                                                            </label>
+                                                                        </div>
+                                                                        <div>
+                                                                            <label>
+                                                                                Paso
+                                                                                <select 
+                                                                                    defaultValue={'default'} 
+                                                                                    onChange={ e => {
+                                                                                        changeCondition('stepInputId', step.position, inputIndex, conditionIndex, e.target.value)
+                                                                                    }}
+                                                                                >
+                                                                                    <option 
+                                                                                        disabled 
+                                                                                        value="default" 
+                                                                                        key="-1"
+                                                                                    >Selecciona un paso</option>
+                                                                                    {addedSteps.map((step, stepIndex) => {
+                                                                                        return (
+                                                                                            <option 
+                                                                                                key={stepIndex} 
+                                                                                                value={step.position}
+                                                                                            >{step.title || `Paso ${step.position}`}</option>
+                                                                                        );
+                                                                                    })}
+                                                                                </select>
+                                                                            </label>
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    }
+                                                    {addedSteps.length > 1 &&
+                                                        <button onClick={e => { addCondition(step.position, inputIndex); }}>Agregar condición</button>
+                                                    }
                                                 </div>
                                             );
                                         })}
