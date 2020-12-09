@@ -24,7 +24,7 @@ import {
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
 
 // Estilos en línea
-const useStyles = makeStyles((theme: Theme) => 
+const useStyles = makeStyles((theme: Theme) =>
     createStyles({
         step: {
             display: 'flex',
