@@ -21,6 +21,32 @@ import {
     Select,
     MenuItem
 } from '@material-ui/core';
+import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
+
+// Estilos en línea
+const useStyles = makeStyles((theme: Theme) => 
+    createStyles({
+        step: {
+            display: 'flex',
+            justifyContent: 'center',
+            alignContent: 'center',
+        },
+        input: {
+            width: '50vw',
+            marginBottom: theme.spacing(1),
+        },
+        formControl: {
+            margin: theme.spacing(1),
+            minWidth: 120,
+        },
+        selectEmpty: {
+            marginTop: theme.spacing(2),
+        },
+        buttons: {
+            marginTop: theme.spacing(3),
+        },
+    }),
+);
 
 /**
  * Títulos de los pasos (Stepper).
@@ -34,6 +60,7 @@ function getSteps() {
 }
 
 export default () => {
+    const classes = useStyles();
     // Definición de variables de estado
     const [activeStep, setActiveStep] = useState(0);
     const steps = getSteps();
@@ -230,11 +257,12 @@ export default () => {
             <div className="container">
                 {/** Correo electrónico => */}
                 {activeStep === 0 && (
-                    <div className="author">
+                    <div className={classes.step}>
                         <TextField
                             label="Correo electrónico"
                             variant="outlined"
                             type="email"
+                            className={classes.input}
                             value={author}
                             onChange={e => { setAuthor(e.target.value); }}
                         />
@@ -244,12 +272,13 @@ export default () => {
 
                 {/** Título y subtítulo => */}
                 {activeStep === 1 && (
-                    <div className="main-info">
+                    <div className={classes.step}>
                         <div className="title">
                             <TextField
                                 label="Título"
                                 variant="outlined"
                                 type="text"
+                                className={classes.input}
                                 value={title}
                                 onChange={e => { setTitle(e.target.value); }}
                             />
@@ -259,6 +288,7 @@ export default () => {
                                 label="Descripción"
                                 variant="outlined"
                                 type="text"
+                                className={classes.input}
                                 value={description}
                                 onChange={e => { setDescription(e.target.value); }}
                             />
@@ -282,6 +312,7 @@ export default () => {
                                                     label="Título"
                                                     variant="outlined"
                                                     type="text"
+                                                    className={classes.input}
                                                     value={step.title} 
                                                     onChange={e => { 
                                                         changeStepText('title', step.position, e.target.value) 
@@ -293,6 +324,7 @@ export default () => {
                                                     label="Subtítulo"
                                                     variant="outlined"
                                                     type="text" 
+                                                    className={classes.input}
                                                     value={step.subtitle} 
                                                     onChange={e => { 
                                                         changeStepText('subtitle', step.position, e.target.value) 
@@ -311,6 +343,7 @@ export default () => {
                                                                         label="Etiqueta"
                                                                         variant="outlined"
                                                                         type="text" 
+                                                                        className={classes.input}
                                                                         value={stepInput.label} 
                                                                         onChange={ e => {
                                                                             changeStepInputText('label', step.position, inputIndex, e.target.value)
@@ -318,25 +351,25 @@ export default () => {
                                                                     />
                                                                 </div>
                                                                 <div>
-                                                                    <FormControl>
-                                                                        <InputLabel id={`input-type-${inputIndex}-label`}>Tipo</InputLabel>
+                                                                    <FormControl variant="outlined" className={classes.formControl}>
+                                                                        <InputLabel shrink id={`input-type-${inputIndex}-label`}>Tipo</InputLabel>
                                                                         <Select
                                                                             labelId={`input-type-${inputIndex}-label`}
                                                                             id={`input-type-${inputIndex}-select`}
                                                                             disabled={loadingInputs}
-                                                                            value={stepInput.inputId || 'default'} 
+                                                                            value={stepInput.inputId} 
+                                                                            displayEmpty
                                                                             onChange={ e => {
-                                                                                changeStepInputText('conditionId', step.position, inputIndex, e.target.value)
+                                                                                changeStepInputText('inputId', step.position, inputIndex, e.target.value)
                                                                             }}
                                                                         >
                                                                             <MenuItem 
                                                                                 disabled 
-                                                                                value="default" 
+                                                                                value="" 
                                                                                 key="-1"
                                                                             >{loadingInputs ? 'Cargando' : 'Selecciona un tipo'}</MenuItem>
                                                                             {Object.keys(inputs).map((inputId, inputIndex) => {
                                                                                 const input: Input = inputs[inputId];
-
                                                                                 return (
                                                                                     <MenuItem 
                                                                                         key={inputIndex} 
@@ -353,72 +386,78 @@ export default () => {
                                                                     <div className="input-conditions">
                                                                         {/** Condición => */}
                                                                         {stepInput.conditions.map((condition: InputCondition, conditionIndex) => {
-
                                                                             return (
                                                                                 <div className="input-condition" key={conditionIndex}>
                                                                                     <div>
-                                                                                        <label>
-                                                                                            Condición
-                                                                                            <select 
-                                                                                                disabled={loadingConditions} 
-                                                                                                defaultValue={'default'} 
+                                                                                        <FormControl variant="outlined" className={classes.formControl}>
+                                                                                            <InputLabel shrink id={`input-condition-${conditionIndex}-label`}>Condición</InputLabel>
+                                                                                            <Select
+                                                                                                labelId={`input-condition-${conditionIndex}-label`}
+                                                                                                id={`input-condition-${conditionIndex}-select`}
+                                                                                                disabled={loadingConditions}
+                                                                                                value={condition.conditionId} 
+                                                                                                displayEmpty
                                                                                                 onChange={e => {
-                                                                                                    changeCondition('type', step.position, inputIndex, conditionIndex, e.target.value)
+                                                                                                    changeCondition('conditionId', step.position, inputIndex, conditionIndex, e.target.value);
                                                                                                 }}
                                                                                             >
-                                                                                                <option 
+                                                                                                <MenuItem 
                                                                                                     disabled 
-                                                                                                    value="default" 
+                                                                                                    value="" 
                                                                                                     key="-1"
-                                                                                                >{loadingConditions ? 'Cargando' : 'Selecciona una condición'}</option>
+                                                                                                >{loadingConditions ? 'Cargando' : 'Selecciona una condición'}</MenuItem>
                                                                                                 {Object.keys(conditions).map((conditionId, conditionIndex) => {
                                                                                                     const condition: Condition = conditions[conditionId];
                                                                                                     return (
-                                                                                                        <option 
+                                                                                                        <MenuItem 
                                                                                                             key={conditionIndex} 
                                                                                                             value={conditionId}
-                                                                                                        >{condition.name}</option>
+                                                                                                        >{condition.name}</MenuItem>
                                                                                                     );
                                                                                                 })}
-                                                                                            </select>
-                                                                                        </label>
+                                                                                            </Select>
+                                                                                        </FormControl>
                                                                                     </div>
                                                                                     <div className="step-condition">
-                                                                                        <label>
-                                                                                            Paso
-                                                                                            <select 
-                                                                                                defaultValue={'default'} 
+                                                                                        <FormControl variant="outlined" className={classes.formControl}>
+                                                                                            <InputLabel shrink id={`step-condition-${conditionIndex}-label`}>Paso</InputLabel>
+                                                                                            <Select
+                                                                                                labelId={`step-condition-${conditionIndex}-label`}
+                                                                                                id={`step-condition-${conditionIndex}-select`}
+                                                                                                disabled={loadingConditions}
+                                                                                                value={condition.stepInputId} 
+                                                                                                displayEmpty
                                                                                                 onChange={e => {
                                                                                                     changeCondition('stepInputId', step.position, inputIndex, conditionIndex, e.target.value)
                                                                                                 }}
                                                                                             >
-                                                                                                <option 
+                                                                                                <MenuItem 
                                                                                                     disabled 
-                                                                                                    value="default" 
+                                                                                                    value="" 
                                                                                                     key="-1"
-                                                                                                >Selecciona un paso</option>
+                                                                                                >Selecciona un paso</MenuItem>
                                                                                                 {addedSteps.map((step, stepIndex) => {
                                                                                                     return (
-                                                                                                        <option 
+                                                                                                        <MenuItem 
                                                                                                             key={stepIndex} 
                                                                                                             value={step.position}
-                                                                                                        >{step.title || `Paso ${step.position}`}</option>
+                                                                                                        >{step.title || `Paso ${step.position}`}</MenuItem>
                                                                                                     );
                                                                                                 })}
-                                                                                            </select>
-                                                                                        </label>
+                                                                                            </Select>
+                                                                                        </FormControl>
                                                                                     </div>
                                                                                     <div className="value-condition">
-                                                                                        <label>
-                                                                                            Valor
-                                                                                            <input 
-                                                                                                type="text"
-                                                                                                value={condition.value}
-                                                                                                onChange={e => { 
-                                                                                                    changeCondition('value', step.position, inputIndex, conditionIndex, e.target.value); 
-                                                                                                }}
-                                                                                            />
-                                                                                        </label>
+                                                                                        <TextField
+                                                                                            label="Valor"
+                                                                                            variant="outlined"
+                                                                                            type="text"
+                                                                                            className={classes.input}
+                                                                                            value={condition.value}
+                                                                                            onChange={e => { 
+                                                                                                changeCondition('value', step.position, inputIndex, conditionIndex, e.target.value); 
+                                                                                            }}
+                                                                                        />
                                                                                     </div>
                                                                                 </div>
                                                                             );
@@ -472,7 +511,7 @@ export default () => {
                 {/** <= Finalización */}
             </div>
 
-            <div className="buttons">
+            <div className={classes.buttons}>
                 <Button
                     disabled={activeStep === 0}
                     onClick={handleBack}
