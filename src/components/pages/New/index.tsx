@@ -3,10 +3,10 @@ import axios from 'axios';
 import { Step } from '../../../entities/Step';
 import { StepInput } from '../../../entities/StepInput';
 import { Input } from '../../../entities/Input';
-import { objectToArray } from '../../../utils/functions';
+import { objectToArray, rand, getLocalURL } from '../../../utils/functions';
 import { InputCondition } from '../../../entities/InputCondition';
 import { Condition } from '../../../entities/Condition';
-import { APIURL } from '../../../utils/server';
+import { APIURL, APICONFIG } from '../../../utils/server';
 import { Briefing } from '../../../entities/Briefing';
 import { 
     Container, 
@@ -19,9 +19,12 @@ import {
     FormControl,
     InputLabel,
     Select,
-    MenuItem
+    MenuItem,
+    Modal
 } from '@material-ui/core';
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
+import { Link } from 'react-router-dom';
+import { TheatersRounded } from '@material-ui/icons';
 
 // Estilos en línea
 const useStyles = makeStyles((theme: Theme) =>
@@ -45,6 +48,27 @@ const useStyles = makeStyles((theme: Theme) =>
         buttons: {
             marginTop: theme.spacing(3),
         },
+        paper: {
+            margin: theme.spacing(50, 90),
+            position: 'absolute',
+            width: 400,
+            backgroundColor: theme.palette.background.paper,
+            border: '2px solid #000',
+            boxShadow: theme.shadows[5],
+            padding: theme.spacing(2, 4, 3),
+        },
+        stepInputs: {
+            marginTop: theme.spacing(5)
+        },
+        stepInput: {
+            padding: theme.spacing(2),
+            border: '1px solid #5e5e5e',
+            borderRadius: '5px',
+            marginBottom: theme.spacing(3),
+        },
+        button: {
+            marginBottom: theme.spacing(1),
+        },
     }),
 );
 
@@ -53,9 +77,9 @@ const useStyles = makeStyles((theme: Theme) =>
  */
 function getSteps() {
     return [
-        'Identidad',
-        'Información básica',
-        'Diseño'
+        'Identidad', // 0
+        'Información básica', // 1
+        'Diseño' // 2
     ];
 }
 
@@ -72,11 +96,27 @@ export default () => {
     const [conditions, setConditions] = useState([] as Condition[]);
     const [loadingInputs, setLoadingInputs] = useState(true);
     const [loadingConditions, setLoadingConditions] = useState(true);
+    const [error, setError] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+    const [modalOpen, setModalOpen] = useState(false);
+    const [briefing, setBriefing] = useState({} as Briefing);
 
     /**
      * Avanzar un paso en el Stepper.
      */
     const handleNext = () => {
+        if (!author.length) {
+            setErrorValue('Tu dirección de correo electrónico es importante para que podamos crearte un panel personalizado para gestionar tus formularios.');
+            return;
+        }
+
+        if (!title.length && activeStep === 1) {
+            setErrorValue('Necesitas un título para diferenciar tus formularios.');
+            return;
+        }
+
+        clearError();
+
         setActiveStep(prevActiveStep => prevActiveStep + 1);
     };
 
@@ -96,6 +136,18 @@ export default () => {
             step.position = addedSteps[addedSteps.length-1].position + 1;
         }
         setAddedSteps([ ...addedSteps, step ]);
+    }
+
+    function setErrorValue(msg: string): void {
+        setError(true);
+        setErrorMessage(msg);
+        setModalOpen(true);
+    }
+
+    function clearError() {
+        setError(false);
+        setErrorMessage('');
+        setModalOpen(false);
     }
     
     /**
@@ -198,7 +250,7 @@ export default () => {
      * @param val Valor a asignar.
      */
     function changeStepInputText(field: string, stepPosition: number, inputIndex: number, val: any): void {
-        const modifiedStep = addedSteps.find(step => step.position === stepPosition) as Step; console.log(modifiedStep)
+        const modifiedStep = addedSteps.find(step => step.position === stepPosition) as Step;
         const otherSteps = addedSteps.filter(step => step.position !== stepPosition) as Step[];
         modifiedStep.inputs[inputIndex][field] = val;
         const steps = [ modifiedStep, ...otherSteps ].sort(compareStep);
@@ -228,9 +280,27 @@ export default () => {
     /**
      * Envía la información procesada al servidor.
      */
-    function save() {
-        console.log('save attempt');
+    async function save() {
+        const briefing = new Briefing();
+        briefing.title = title;
+        briefing.description = description;
+        briefing.author = author;
+        briefing.steps = addedSteps;
+
+        const result = await axios.post(`${APIURL}/briefing`, briefing, APICONFIG);
+        const { data } = result;
+        if (data.status >= 400) {
+            setErrorValue(data.message);
+            return;
+        }
+        setBriefing(data.data);
+        handleNext();
     }
+
+    function handleModalClose() {
+        setModalOpen(false);
+    }
+
 
     /**
      * Carga inicial de datos.
@@ -242,6 +312,19 @@ export default () => {
     
     return (
         <Container>
+            {error && (
+                <Modal
+                    open={modalOpen}
+                    onClose={handleModalClose}
+                    aria-labelledby="error-modal-title"
+                    aria-describedby="error-modal-description"
+                >
+                    <div className={classes.paper}>
+                        <Typography variant="h5" id="error-modal-title">¡Ups!</Typography>
+                        <p id="error-modal-description">{errorMessage}</p>
+                    </div>
+                </Modal>
+            )}
             <Typography variant="h3">Nuevo formulario</Typography>
 
             {/** Pasos del formulario => */}
@@ -287,6 +370,8 @@ export default () => {
                             <TextField
                                 label="Descripción"
                                 variant="outlined"
+                                multiline
+                                rowsMax={4}
                                 type="text"
                                 className={classes.input}
                                 value={description}
@@ -321,23 +406,26 @@ export default () => {
                                             </div>
                                             <div>
                                                 <TextField
-                                                    label="Subtítulo"
+                                                    label="Descripción"
                                                     variant="outlined"
+                                                    multiline
+                                                    rowsMax={4}
                                                     type="text" 
                                                     className={classes.input}
-                                                    value={step.subtitle} 
+                                                    value={step.description} 
                                                     onChange={e => { 
-                                                        changeStepText('subtitle', step.position, e.target.value) 
+                                                        changeStepText('description', step.position, e.target.value) 
                                                     }} 
                                                 />
                                             </div>
                                             {/** Campos => */}
                                             {step.inputs.length > 0 &&
-                                                <div className="step-inputs">
+                                                <div className={classes.stepInputs}>
+                                                    <Typography variant="h4">Campos</Typography>
                                                     {/** Campo => */}
                                                     {step.inputs.map((stepInput: StepInput, inputIndex: number) => {
                                                         return (
-                                                            <div className="step-input" key={inputIndex}>
+                                                            <div className={classes.stepInput} key={inputIndex}>
                                                                 <div>
                                                                     <TextField
                                                                         label="Etiqueta"
@@ -368,12 +456,11 @@ export default () => {
                                                                                 value="" 
                                                                                 key="-1"
                                                                             >{loadingInputs ? 'Cargando' : 'Selecciona un tipo'}</MenuItem>
-                                                                            {Object.keys(inputs).map((inputId, inputIndex) => {
-                                                                                const input: Input = inputs[inputId];
+                                                                            {inputs.map((input, i) => {
                                                                                 return (
                                                                                     <MenuItem 
-                                                                                        key={inputIndex} 
-                                                                                        value={inputId}
+                                                                                        key={i} 
+                                                                                        value={input.id}
                                                                                     >{input.name}</MenuItem>
                                                                                 );
                                                                             })}
@@ -384,6 +471,7 @@ export default () => {
                                                                 {/** Condiciones => */}
                                                                 {stepInput.conditions && stepInput.conditions.length > 0 &&
                                                                     <div className="input-conditions">
+                                                                        <Typography variant="h5">Condiciones</Typography>
                                                                         {/** Condición => */}
                                                                         {stepInput.conditions.map((condition: InputCondition, conditionIndex) => {
                                                                             return (
@@ -467,6 +555,7 @@ export default () => {
                                                                 }
                                                                 {addedSteps.length > 1 &&
                                                                     <Button
+                                                                        className={classes.button}
                                                                         variant="outlined"
                                                                         color="secondary"
                                                                         onClick={e => { addCondition(step.position, inputIndex); }}
@@ -480,6 +569,7 @@ export default () => {
                                                 </div>
                                             }
                                             <Button
+                                                className={classes.button}
                                                 variant="contained"
                                                 color="secondary"
                                                 onClick={() => { addStepInput(step.position); }}
@@ -505,7 +595,27 @@ export default () => {
                 {/** Finalización => */}
                 {activeStep === steps.length && (
                     <div>
-                        Finalización
+                        <Typography variant="h4">Diseño de formulario finalizado</Typography>
+
+                        <p>Ahora puedes compartir el enlace de tu formulario:</p>
+                        <TextField 
+                            label="Dirección URL"
+                            variant="outlined"
+                            value={getLocalURL(`b/${briefing.id}`)}
+                            className={classes.input}
+                            type="url"
+                            disabled
+                        />
+                        <p>Te hemos enviado la información a tu dirección de correo electrónico.</p>
+                        <p>Puedes acceder al panel desde aquí.</p>
+                        <Button
+                            variant="contained"
+                            color="secondary"
+                            component={Link}
+                            to={`/${briefing.author}/access?token=123ref`}
+                        >
+                            Ir al panel
+                        </Button>
                     </div>
                 )}
                 {/** <= Finalización */}
@@ -517,12 +627,12 @@ export default () => {
                     onClick={handleBack}
                 >Atrás</Button>
                 <Button
-                    disabled={activeStep === steps.length}
+                    disabled={activeStep === steps.length + 1}
                     variant="contained"
                     color="primary"
-                    onClick={handleNext}
+                    onClick={(activeStep === steps.length - 1) ? save : handleNext}
                 >
-                    {activeStep === steps.length - 1 ? 'Finalizar' : 'Siguiente'}
+                    {(activeStep === steps.length - 1) ? 'Finalizar' : 'Siguiente'}
                 </Button>
             </div>
         </Container>

@@ -5,7 +5,7 @@ export class Briefing {
     title: string;
     description: string;
     author: string;
-    steps?: Step[];
+    steps: Step[];
     created?: Date;
 
     constructor() {
@@ -13,5 +13,6 @@ export class Briefing {
         this.description = '';
         this.author = '';
         this.steps = [];
+        this.created = new Date();
     }
 }

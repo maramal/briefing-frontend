@@ -18,3 +18,11 @@ export const extract = (obj: object, key: string): object => {
     }
     return newObj;
 } 
+
+export function rand() {
+    return Math.round(Math.random() * 20) - 10;
+}
+
+export function getLocalURL(url: string) {
+    return `http://localhost:3000/${url}`;
+}

@@ -4,13 +4,13 @@ export class Step {
     id?: string;
     position: number;
     title: string;
-    subtitle: string;
+    description: string;
     inputs: StepInput[];
 
     constructor() {
         this.position = 1;
         this.title = '';
-        this.subtitle = '';
+        this.description = '';
         this.inputs = [];
     }
 
